@@ -1,0 +1,21 @@
+.tablify {
+	border-collapse: collapse;
+}
+.tablify td, .tablify th {
+	border: 1px solid #ababab;
+	font-size: 14px;
+	font-family: arial;
+	padding: 10px;
+	text-align: left;
+}
+.tablify th {
+	background: linear-gradient(#efefef, #ababab);
+}
+.tablify tr.actions td {
+	background: linear-gradient(#efefef, #ababab);
+	padding: 3px;
+}
+.tablify tr.selected td {
+	background-color: #ababab;
+	color: #fff;
+}
