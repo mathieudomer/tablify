@@ -1,70 +1,85 @@
-// Variables
-var tbody = document.querySelector(".tablify tbody");
-var trs = document.querySelectorAll(".tablify tbody tr");
-// Fonctions assistance
-function isInTablify(elt) {
-	if(elt == document.body || elt == document.body.parentNode) return false;
-	else if(elt.parentNode.classList.contains("tablify")) return true;
-	else return isInTablify(elt.parentNode);
-}
+/*
+ * tablify
+ * Author : Mathieu DOMER
+ * Created : 25/10/2013
+ * Modified : 
+ *
+ */
+
+// Objets externes
 NodeList.prototype.addEventListenerAll = function(type, listener, useCapture) {
 	for(var i = 0; i < this.length; i++) {
 		this[i].addEventListener(type, listener, useCapture);
 	}
-}
+};
+
+// Fonctions assistance
+var isIn = function(elt, className) {
+	if(elt == document.body || elt == document.body.parentNode) return false;
+	else if(elt.parentNode.classList.contains(className)) return true;
+	else return isIn(elt.parentNode, className);
+};
+
+// Génération du HTML
+
 // Events tableau
 // Sélection (multiple avec ctrl ou cmd)
-tbody.addEventListener("click", function(e) {
+tablify.prototype.tbodyClick = function(e) {
+	var trsSelected = document.querySelectorAll(".tablify tr.selected");
 	if(!e.ctrlKey && !e.metaKey) {
 		// Déselection des lignes sélectionnées si ctrl n'est pas appuyée
-		var selecteds = document.querySelectorAll(".tablify tr.selected");
-		for(var i = 0; i < selecteds.length; i++) {
-			selecteds[i].classList.remove("selected");
+		for(var i = 0; i < trsSelected.length; i++) {
+			trsSelected[i].classList.remove("selected");
 		}
 	}
 	e.target.parentNode.classList.add("selected");
-}, false);
+};
 // Déselection
-document.addEventListener("click", function(e) {
-	if (!isInTablify(e.target)) {
-		var selecteds = document.querySelectorAll(".tablify tr.selected");
-		for(var i = 0; i < selecteds.length; i++) {
-			selecteds[i].classList.remove("selected");
+tablify.prototype.documentClick = function(e) {
+	if (!isIn(e.target, "tablify")) {
+		var trsSelected = document.querySelectorAll(".tablify tr.selected");
+		for(var i = 0; i < trsSelected.length; i++) {
+			trsSelected[i].classList.remove("selected");
 		}
 	}
-}, false);
+};
 // Drag'n drop
-var trSelected = null;
-trs.addEventListenerAll("dragstart", function(e) { 
+tablify.prototype.trsDragStart = function(e) { 
 	e.dataTransfer.effectAllowed = 'move';
-	trSelected = e.currentTarget;
-	trSelected.classList.add("moving");
-	e.dataTransfer.setData("Text", trSelected.id);
-
-}, false);
-trs.addEventListenerAll("dragover", function(e) {
+	e.currentTarget.classList.add("moving");
+	e.dataTransfer.setData("text/html", null); // Ne doit pas être vide : Firefox !
+};
+tablify.prototype.trsDragOver = function(e) {
 	e.preventDefault();
 	var trOvered = e.target.parentNode;
-	if (e.pageY - e.target.offsetTop < 20) {
-		tbody.insertBefore(trSelected, trOvered);
+	if (e.pageY - e.target.offsetTop < e.target.offsetHeight / 2) {
+		document.querySelector(".tablify tbody").insertBefore(document.querySelector(".tablify tr.moving"), trOvered);
 	}
 	else {
+		var tbody = document.querySelector(".tablify tbody");
 		if (trOvered.isEqualNode(tbody.lastElementChild)) {
-			tbody.appendChild(trSelected);
+			tbody.appendChild(document.querySelector(".tablify tr.moving"));
 		}
 		else {
-			tbody.insertBefore(trSelected, trOvered.nextElementSibling);
+			tbody.insertBefore(document.querySelector(".tablify tr.moving"), trOvered.nextElementSibling);
 		}
-		
 	}
 	return false;
-}, false);
-tbody.addEventListener("drop", function(e){
+};
+tablify.prototype.trsDragEnd = function(e){
 	e.preventDefault();
-	trSelected.classList.remove("moving");
-	trSelected = null;
-	// Refaire les id
-}, false);
+	document.querySelector(".tablify tr.moving").classList.remove("moving");
+	// Refaire les ids
+	var trs = document.querySelectorAll(".tablify tbody tr");
+	for (var i = 0; i < trs.length; i++) {
+		trs[i].id = "tr" + i;
+	}
+	return false;
+};
+tablify.prototype.tbodyDrop = function(e){
+	e.preventDefault();
+	return false;
+};
 // Tri
 
 
@@ -74,12 +89,29 @@ tbody.addEventListener("drop", function(e){
 // Editer
 
 // Supprimer
-var supprimers = document.querySelectorAll(".tablify .supprimer");
-for(var i = 0; i < supprimers.length; i++) {
-	supprimers[i].addEventListener("click", function(e) {
-		var selecteds = document.querySelectorAll(".tablify tr.selected");
-		for(var i = 0; i < selecteds.length; i++) {
-			tbody.removeChild(selecteds[i]);
-		}
-	}, false);
+tablify.prototype.supprimersClick = function(e) {
+	var trsSelected = document.querySelectorAll(".tablify tr.selected");
+	for(var i = 0; i < trsSelected.length; i++) {
+		document.querySelector(".tablify tbody").removeChild(trsSelected[i]);
+	}
+};
+
+// Constructeur
+function tablify() {
+	
+	// Propriétés
+	this.tbody = document.querySelector(".tablify tbody");
+	this.trs = document.querySelectorAll(".tablify tbody tr");
+	this.supprimers = document.querySelectorAll(".tablify .supprimer");
+	
+	// Initiate events
+	document.addEventListener("click", this.documentClick, false);
+	this.tbody.addEventListener("click", this.tbodyClick, false);
+	this.trs.addEventListenerAll("dragstart", this.trsDragStart, false);
+	this.trs.addEventListenerAll("dragover", this.trsDragOver, false);
+	this.trs.addEventListenerAll("dragend", this.trsDragEnd, false);
+	this.tbody.addEventListener("drop", this.tbodyDrop, false);
+	this.supprimers.addEventListenerAll("click", this.supprimersClick, false);
+
 }
+var test = new tablify();
