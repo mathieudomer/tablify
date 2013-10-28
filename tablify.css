@@ -8,23 +8,34 @@
 	padding: 10px;
 	text-align: left;
 }
-.tablify th {
-	background: linear-gradient(#efefef, #ababab);
+.tablify thead th {
+	background-color: #ccf;
 }
 .tablify tr.actions td {
 	background: linear-gradient(#efefef, #ababab);
 	padding: 3px;
 }
-.tablify tbody tr:nth-child(even) td {
+.tablify tbody tr td:first-child {
+	background-color: #ccf;
+}
+.tablify tbody tr td:first-child {
+	cursor: e-resize;
+}
+.tablify tbody tr:nth-child(even) td:not(:first-child) {
 	background-color: #efefef;
 }
-.tablify tbody tr:nth-child(odd) td {
+.tablify tbody tr:nth-child(odd) td:not(:first-child) {
 	background-color: #fff;
 }
 .tablify tbody tr.selected td {
-	background-color: #ababab;
-	color: #fff;
+	background-color: #fc9 !important;
 }
-.tablify tbody tr.moving td {
+.tablify tbody tr.moving td:not(:first-child) {
 	background-color: #ababab;
+}
+.tablify tbody tr.editing td {
+	background-color: #f00;
+}
+.tablify tbody td.hovered, .tablify thead th.hovered {
+	background-color: #fc9 !important;
 }
