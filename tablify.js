@@ -6,13 +6,29 @@
  *
  */
 
-// Objets externes
+
+/**
+ * Extends {@link NodeList} to simplify addEventListener on list
+ *
+ * @param	type		Event type
+ * @param	listener 	Object triggered when the event occurs
+ * @param	useCapture	See {@link EventTarget.addEventListener}
+ * @see 	EventTarget.addEventListener
+ */
 NodeList.prototype.addEventListenerAll = function(type, listener, useCapture) {
 	for(var i = 0; i < this.length; i++) {
 		this[i].addEventListener(type, listener, useCapture);
 	}
 };
 
+/**
+ * Define reccursively if the element elt is in another element which class name is className
+ *
+ * @param	elt			Original element
+ * @param	className 	Class name searched
+ * @return	True - The elt is in an element which class name is className
+ * @return	False - The elt is not in an element which class name is className
+ */
 // Fonctions assistance
 var isIn = function(elt, className) {
 	if(elt == document.body || elt == document.body.parentNode) return false;
@@ -22,9 +38,16 @@ var isIn = function(elt, className) {
 
 // Génération du HTML
 
-// Events tableau
-// Sélection (multiple avec ctrl ou cmd)
-tablify.prototype.tbodyClick = function(e) {
+// Events 
+
+/**
+ * Defines behavior of element of tbody is selected
+ * Multiple selection is possible using Ctrl or Cmd
+ *
+ * @param	e 	{@link Event} object
+ * @see 	EventTarget.addEventListener
+ */
+Tablify.prototype.tbodyClick = function(e) {
 	var trsSelected = document.querySelectorAll(".tablify tr.selected");
 	if(!e.ctrlKey && !e.metaKey) {
 		// Déselection des lignes sélectionnées si ctrl n'est pas appuyée
@@ -34,8 +57,15 @@ tablify.prototype.tbodyClick = function(e) {
 	}
 	e.target.parentNode.classList.add("selected");
 };
-// Déselection
-tablify.prototype.documentClick = function(e) {
+
+/**
+ * Defines behavior of element of tbody is unselected
+ * Unselection occurs when clicking outside the table
+ *
+ * @param	e 	{@link Event} object
+ * @see 	EventTarget.addEventListener
+ */
+Tablify.prototype.documentClick = function(e) {
 	if (!isIn(e.target, "tablify")) {
 		var trsSelected = document.querySelectorAll(".tablify tr.selected");
 		for(var i = 0; i < trsSelected.length; i++) {
@@ -43,13 +73,29 @@ tablify.prototype.documentClick = function(e) {
 		}
 	}
 };
-// Drag'n drop
-tablify.prototype.trsDragStart = function(e) { 
+
+/**
+ * Defines behavior tr elements on drag start
+ * Add .moving class to the selected tr as setData doesn't work in dragover events
+ *
+ * @param	e 	{@link Event} object
+ * @see 	EventTarget.addEventListener
+ */
+Tablify.prototype.trsDragStart = function(e) { 
 	e.dataTransfer.effectAllowed = 'move';
 	e.currentTarget.classList.add("moving");
-	e.dataTransfer.setData("text/html", null); // Ne doit pas être vide : Firefox !
+	e.dataTransfer.setData("text/html", null); // Cannot be empty for Firefox !
 };
-tablify.prototype.trsDragOver = function(e) {
+
+/**
+ * Defines behavior tr elements on drag over
+ * If the selected tr is moved on the upper half part of another tr, it is inserted before
+ * If the selected tr is moved on the lower half part of another tr, it is inserted after
+ *
+ * @param	e 	{@link Event} object
+ * @see 	EventTarget.addEventListener
+ */
+Tablify.prototype.trsDragOver = function(e) {
 	e.preventDefault();
 	var trOvered = e.target.parentNode;
 	if (e.pageY - e.target.offsetTop < e.target.offsetHeight / 2) {
@@ -66,7 +112,16 @@ tablify.prototype.trsDragOver = function(e) {
 	}
 	return false;
 };
-tablify.prototype.trsDragEnd = function(e){
+
+/**
+ * Defines behavior tr elements on drag end
+ * Once released, we remove the .moving class of the selected tr
+ * The ids of the tr elements in the tbody are renumbered
+ *
+ * @param	e 	{@link Event} object
+ * @see 	EventTarget.addEventListener
+ */
+Tablify.prototype.trsDragEnd = function(e){
 	e.preventDefault();
 	document.querySelector(".tablify tr.moving").classList.remove("moving");
 	// Refaire les ids
@@ -76,7 +131,15 @@ tablify.prototype.trsDragEnd = function(e){
 	}
 	return false;
 };
-tablify.prototype.tbodyDrop = function(e){
+
+/**
+ * Defines behavior of the tbody element on drop
+ * Nothing is done there, its for Firefox...
+ *
+ * @param	e 	{@link Event} object
+ * @see 	EventTarget.addEventListener
+ */
+Tablify.prototype.tbodyDrop = function(e){
 	e.preventDefault();
 	return false;
 };
@@ -88,21 +151,35 @@ tablify.prototype.tbodyDrop = function(e){
 
 // Editer
 
-// Supprimer
-tablify.prototype.supprimersClick = function(e) {
+
+// Ajouter
+
+
+// Enregistrer
+
+/**
+ * Defines behavior of the Remove button when clicked
+ * All .selected tr elements are removed
+ *
+ * @param	e 	{@link Event} object
+ * @see 	EventTarget.addEventListener
+ */
+Tablify.prototype.supprimersClick = function(e) {
 	var trsSelected = document.querySelectorAll(".tablify tr.selected");
 	for(var i = 0; i < trsSelected.length; i++) {
 		document.querySelector(".tablify tbody").removeChild(trsSelected[i]);
 	}
 };
 
-// Constructeur
-function tablify() {
+/** 
+ * Class constructor.
+ */
+function Tablify() {
 	
 	// Propriétés
 	this.tbody = document.querySelector(".tablify tbody");
 	this.trs = document.querySelectorAll(".tablify tbody tr");
-	this.supprimers = document.querySelectorAll(".tablify .supprimer");
+	this.removeButton = document.querySelectorAll(".tablify button.remove");
 	
 	// Initiate events
 	document.addEventListener("click", this.documentClick, false);
@@ -111,7 +188,7 @@ function tablify() {
 	this.trs.addEventListenerAll("dragover", this.trsDragOver, false);
 	this.trs.addEventListenerAll("dragend", this.trsDragEnd, false);
 	this.tbody.addEventListener("drop", this.tbodyDrop, false);
-	this.supprimers.addEventListenerAll("click", this.supprimersClick, false);
+	this.removeButton.addEventListenerAll("click", this.supprimersClick, false);
 
 }
-var test = new tablify();
+var test = new Tablify();
