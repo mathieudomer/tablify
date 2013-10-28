@@ -1,13 +1,19 @@
+// Variables
+var tbody = document.querySelector(".tablify tbody");
+var trs = document.querySelectorAll(".tablify tbody tr");
 // Fonctions assistance
 function isInTablify(elt) {
 	if(elt == document.body || elt == document.body.parentNode) return false;
 	else if(elt.parentNode.classList.contains("tablify")) return true;
 	else return isInTablify(elt.parentNode);
 }
-
+NodeList.prototype.addEventListenerAll = function(type, listener, useCapture) {
+	for(var i = 0; i < this.length; i++) {
+		this[i].addEventListener(type, listener, useCapture);
+	}
+}
 // Events tableau
 // Sélection (multiple avec ctrl ou cmd)
-var tbody = document.querySelector(".tablify tbody");
 tbody.addEventListener("click", function(e) {
 	if(!e.ctrlKey && !e.metaKey) {
 		// Déselection des lignes sélectionnées si ctrl n'est pas appuyée
@@ -28,8 +34,37 @@ document.addEventListener("click", function(e) {
 	}
 }, false);
 // Drag'n drop
+var trSelected = null;
+trs.addEventListenerAll("dragstart", function(e) { 
+	e.dataTransfer.effectAllowed = 'move';
+	trSelected = e.currentTarget;
+	trSelected.classList.add("moving");
+	e.dataTransfer.setData("Text", trSelected.id);
 
-
+}, false);
+trs.addEventListenerAll("dragover", function(e) {
+	e.preventDefault();
+	var trOvered = e.target.parentNode;
+	if (e.pageY - e.target.offsetTop < 20) {
+		tbody.insertBefore(trSelected, trOvered);
+	}
+	else {
+		if (trOvered.isEqualNode(tbody.lastElementChild)) {
+			tbody.appendChild(trSelected);
+		}
+		else {
+			tbody.insertBefore(trSelected, trOvered.nextElementSibling);
+		}
+		
+	}
+	return false;
+}, false);
+tbody.addEventListener("drop", function(e){
+	e.preventDefault();
+	trSelected.classList.remove("moving");
+	trSelected = null;
+	// Refaire les id
+}, false);
 // Tri
 
 

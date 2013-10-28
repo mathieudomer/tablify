@@ -15,7 +15,16 @@
 	background: linear-gradient(#efefef, #ababab);
 	padding: 3px;
 }
-.tablify tr.selected td {
+.tablify tbody tr:nth-child(even) td {
+	background-color: #efefef;
+}
+.tablify tbody tr:nth-child(odd) td {
+	background-color: #fff;
+}
+.tablify tbody tr.selected td {
 	background-color: #ababab;
 	color: #fff;
+}
+.tablify tbody tr.moving td {
+	background-color: #ababab;
 }
