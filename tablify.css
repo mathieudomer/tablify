@@ -10,6 +10,28 @@
 }
 .tablify thead th {
 	background-color: #ccf;
+	cursor: s-resize;
+}
+.tablify thead th a {
+	display: inline-block;
+	float: right;
+	height: 10px;
+	margin: 3px 0 0 10px;
+	width: 10px;
+}
+.tablify thead th.ascending a {
+	border-bottom: 10px solid black;
+	border-left: 5px solid transparent;
+	border-right: 5px solid transparent;
+	height: 0; 
+	width: 0; 
+}
+.tablify thead th.descending a {
+	border-left: 5px solid transparent;
+	border-right: 5px solid transparent;
+	border-top: 10px solid black;
+	height: 0; 
+	width: 0; 
 }
 .tablify tr.actions td {
 	background: linear-gradient(#efefef, #ababab);
@@ -21,6 +43,9 @@
 .tablify tbody tr td:first-child {
 	cursor: e-resize;
 }
+.tablify tbody tr td:not(:first-child) {
+	cursor: default;
+}
 .tablify tbody tr:nth-child(even) td:not(:first-child) {
 	background-color: #efefef;
 }
@@ -30,11 +55,14 @@
 .tablify tbody tr.selected td {
 	background-color: #fc9 !important;
 }
+.tablify tbody td.selected {
+	background-color: #fc9 !important;
+}
 .tablify tbody tr.moving td:not(:first-child) {
 	background-color: #ababab;
 }
-.tablify tbody tr.editing td {
-	background-color: #f00;
+.tablify tbody td.editing {
+	background-color: #fc9 !important;
 }
 .tablify tbody td.hovered, .tablify thead th.hovered {
 	background-color: #fc9 !important;

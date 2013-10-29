@@ -9,7 +9,7 @@
  * - Drag'n drop colonne
  * - Tri
  * - Filtre
- * - Editer
+ * - Editer à la cellule
  * - Historique
  * - Enregistrer
  * - Charger
@@ -71,13 +71,50 @@ Element.prototype.getIndex = function() {
 }
 
 /**
+ * Unselect all .selected rows
+ *
+ */
+var unSelectRows = function() {
+	var trsSelected = document.querySelectorAll(".tablify tr.selected");
+	for(var i = 0; i < trsSelected.length; i++) {
+		trsSelected[i].classList.remove("selected");
+	}
+}
+
+/**
  * Defines behavior of element of tbody is selected
- * Multiple selection is possible using Ctrl or Cmd
  *
  * @param	e 	{@link Event} object
  * @see 	EventTarget.addEventListener
  */
 Tablify.prototype.tbodyClick = function(e) {
+	e.preventDefault();
+};
+
+/**
+ * Defines behavior of th element when clicked
+ * Sort rows by the selected column : 
+ * - first click : ascending
+ * - second click : descending
+ * - third click : original sort
+ * > Don't change row ids !
+ *
+ * @param	e 	{@link Event} object
+ * @see 	EventTarget.addEventListener
+ */
+Tablify.prototype.thsClick = function(e) {
+	e.target.classList.add("ascending");
+};
+
+/**
+ * Defines behavior of element of row index td is selected
+ * Row selection
+ * Multiple selection is possible using Ctrl or Cmd
+ *
+ * @param	e 	{@link Event} object
+ * @see 	EventTarget.addEventListener
+ */
+Tablify.prototype.tdsRowIndexClick = function(e) {
 	// Unselect all selected rows if neither ctrl nor  cmd key are pressed
 	if(!e.ctrlKey && !e.metaKey) {
 		var trsSelected = document.querySelectorAll(".tablify tr.selected");
@@ -104,10 +141,7 @@ Tablify.prototype.tbodyClick = function(e) {
 Tablify.prototype.documentClick = function(e) {
 	// Unselect selected rows if the click is outside the table
 	if (!isIn(e.target, "tablify")) {
-		var trsSelected = document.querySelectorAll(".tablify tr.selected");
-		for(var i = 0; i < trsSelected.length; i++) {
-			trsSelected[i].classList.remove("selected");
-		}
+		unSelectRows();
 		// Add buttons reactivation
 		var addButtons = document.querySelectorAll(".tablify button.add");
 		for(var i = 0; i < addButtons.length; i++) {
@@ -123,7 +157,7 @@ Tablify.prototype.documentClick = function(e) {
  * @param	e 	{@link Event} object
  * @see 	EventTarget.addEventListener
  */
-Tablify.prototype.tdsMouseEnter = function(e) { 
+Tablify.prototype.tdsCellsMouseEnter = function(e) { 
 	e.target.parentNode.firstElementChild.classList.add("hovered");
 	document.querySelector(".tablify thead th:nth-child(" + (e.target.getIndex() + 1) + ")").classList.add("hovered");
 };
@@ -135,7 +169,7 @@ Tablify.prototype.tdsMouseEnter = function(e) {
  * @param	e 	{@link Event} object
  * @see 	EventTarget.addEventListener
  */
-Tablify.prototype.tdsMouseLeave = function(e) { 
+Tablify.prototype.tdsCellsMouseLeave = function(e) { 
 	e.target.parentNode.firstElementChild.classList.remove("hovered");
 	document.querySelector(".tablify thead th:nth-child(" + (e.target.getIndex() + 1) + ")").classList.remove("hovered");
 };
@@ -151,6 +185,7 @@ Tablify.prototype.trsDragStart = function(e) {
 	e.dataTransfer.effectAllowed = 'move';
 	e.currentTarget.classList.add("moving");
 	e.dataTransfer.setData("text/html", null); // Cannot be empty for Firefox !
+	unSelectRows();
 };
 
 /**
@@ -208,17 +243,22 @@ Tablify.prototype.tbodyDrop = function(e){
 };
 
 /**
- * Defines behavior of the tbody elements on drop
- * Open an inline form for row editing values
+ * Defines behavior of the cell td elements on double click
+ * Open a form for cell editing values
  *
  * @param	e 	{@link Event} object
  * @see 	EventTarget.addEventListener
  */
-Tablify.prototype.tbodyDblClick = function(e){
-	e.target.parentNode.classList.remove("selected");
-	e.target.parentNode.classList.toggle("editing");
+Tablify.prototype.tdsCellsDblClick = function(e){
+	e.target.classList.remove("selected");
+	e.target.classList.toggle("editing");
 
 	// Disable add and remove buttons
+
+	// Tab > cell suivante sans modif
+	// Esc > Exit sans modification
+	// Enter > valid la modif
+	// Haut bas gauche droite > cell suivante sans modif
 };
 
 /**
@@ -249,20 +289,23 @@ function Tablify() {
 	// Propriétés
 	this.tbody = document.querySelector(".tablify tbody");
 	this.trs = document.querySelectorAll(".tablify tbody tr");
+	this.ths = document.querySelectorAll(".tablify thead th:not(#corner)");
 	this.tdsRowIndex = document.querySelectorAll(".tablify tbody td:first-child");
-	this.tdsField = document.querySelectorAll(".tablify tbody td:not(:first-child)");
+	this.tdsCells = document.querySelectorAll(".tablify tbody td:not(:first-child)");
 	this.removeButtons = document.querySelectorAll(".tablify button.remove");
 	
 	// Initiate events
 	document.addEventListener("click", this.documentClick, false);
 	this.tbody.addEventListener("click", this.tbodyClick, false);
-	this.tbody.addEventListener("dblclick", this.tbodyDblClick, false);
+	this.ths.addEventListenerAll("click", this.thsClick, false);
+	this.tdsRowIndex.addEventListenerAll("click", this.tdsRowIndexClick, false);
+	this.tdsCells.addEventListenerAll("dblclick", this.tdsCellsDblClick, false);
 	this.tbody.addEventListener("drop", this.tbodyDrop, false);
 	this.trs.addEventListenerAll("dragstart", this.trsDragStart, false);
 	this.trs.addEventListenerAll("dragover", this.trsDragOver, false);
 	this.trs.addEventListenerAll("dragend", this.trsDragEnd, false);
-	this.tdsField.addEventListenerAll("mouseenter", this.tdsMouseEnter, false);
-	this.tdsField.addEventListenerAll("mouseleave", this.tdsMouseLeave, false);
+	this.tdsCells.addEventListenerAll("mouseenter", this.tdsCellsMouseEnter, false);
+	this.tdsCells.addEventListenerAll("mouseleave", this.tdsCellsMouseLeave, false);
 	this.removeButtons.addEventListenerAll("click", this.removeButtonsClick, false);
 
 }
