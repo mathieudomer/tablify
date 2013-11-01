@@ -4,17 +4,13 @@
 <meta charset="utf-8">
 <title>tablify</title>
 <link rel="stylesheet" href="tablify.css">
-<script src="tablify.js" defer="defer"></script>
+<script src="tablify.js"></script>
 </head>
 <body>
-<table class="tablify">
+<h1>Tablify</h1>
+<h2>Tablified by css class</h2>
+<table id="fromClass" class="tablify">
 	<thead>
-		<tr class="actions">
-			<td colspan="5">
-				<button class="add">Ajouter</button>
-				<button class="remove">Supprimer</button>
-			</td>
-		</tr>
 		<tr>
 			<th id="corner"></th>
 			<th>Nom<a></a></th>
@@ -27,47 +23,77 @@
 		<tr id="tr0" draggable="true">
 			<td>1</td>
 			<td>DOMER</td>
-			<td>0689043616</td>
+			<td>0689043816</td>
 			<td>07/09/1984</td>
 			<td>29 ans</td>
 		</tr>
 		<tr id="tr1" draggable="true">
 			<td>2</td>
 			<td>POUTEAU</td>
-			<td>0618311694</td>
+			<td>0618411694</td>
 			<td>23/04/1984</td>
 			<td>29 ans</td>
 		</tr>
 		<tr id="tr2" draggable="true">
 			<td>3</td>
 			<td>DOMER</td>
-			<td>0610012767</td>
+			<td>0610312767</td>
 			<td>19/12/1956</td>
 			<td>57 ans</td>
 		</tr>
 		<tr id="tr3" draggable="true">
 			<td>4</td>
 			<td>VALETTE</td>
-			<td>0611845811</td>
+			<td>0611145811</td>
 			<td>04/11/1958</td>
 			<td>55 ans</td>
 		</tr>
 		<tr id="tr4" draggable="true">
 			<td>5</td>
 			<td>MENARD</td>
-			<td>0243043183</td>
+			<td>0243643183</td>
 			<td>11/06/1939</td>
 			<td>74 ans</td>
 		</tr>
 	</tbody>
-	<tfoot>
-		<tr class="actions">
-			<td colspan="5">
-				<button class="add">Ajouter</button>
-				<button class="remove">Supprimer</button>
-			</td>
-		</tr>
-	</tfoot>
 </table>
+<script>
+var fromClass = new Tablify();
+fromClass.transformTable("#fromClass");
+</script>
+<h2>Generate from object</h2>
+<script>
+var fromObject = new Tablify();
+fromObject.generateFromObject({
+	columns : [
+		{
+			label : "Nom",
+			type : "text",
+			size : "15"
+		},
+		{
+			label : "Téléphone",
+			type : "text",
+			size : "10"
+		},
+		{
+			label : "Date de naissance",
+			type : "date"
+		},
+		{
+			label : "Age",
+			type : "text",
+			size : "2"
+		}
+	],
+	rows : [
+		["DOMER", "0689043616", "07/09/1984", "29 ans"],
+		["POUTEAU", "0618311694", "23/04/1984", "29 ans"],
+		["DOMER", "0610012767", "19/12/1956", "57 ans"],
+		["VALETTE", "0611845811", "04/11/1958", "55 ans"],
+		["MENARD", "0689043616", "11/06/1939", "74 ans"]
+	]
+});
+</script>
 </body>
 </html>

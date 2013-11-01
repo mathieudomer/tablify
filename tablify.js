@@ -7,6 +7,8 @@
  * - Sauvegarder en local les colonnes
  * - clic droit
  * - Drag'n drop colonne
+ * - Ajouter
+ * - Ajouter plusieurs lignes
  * - Tri
  * - Filtre
  * - Editer à la cellule
@@ -47,18 +49,6 @@ var isIn = function(elt, className) {
 };
 
 /**
- * Recalculate row ids
- *
- */
-var recalculateRowIds = function() {
-	var trs = document.querySelectorAll(".tablify tbody tr");
-	for (var i = 0; i < trs.length; i++) {
-		trs[i].id = "tr" + i;
-		trs[i].firstElementChild.innerHTML = i + 1;
-	}
-};
-
-/**
  * Extends {@link Element} to determine a child node's index inside of its parent node 
  *
  * @return	The index
@@ -71,15 +61,81 @@ Element.prototype.getIndex = function() {
 }
 
 /**
+ * Simplify creation of element in DOM
+ * 
+ * @param	elt			element information : element type, text (optional) and attributes (optional)
+ * @return	The element
+ */
+var createElement = function(elt) {
+	if (null != elt.elt) {
+		var element = document.createElement(elt.elt);
+		if (null != elt.text) element.innerHTML = elt.text;
+		var attr = elt.attr;
+		for(var i in attr) {
+			if ("className" == i){
+				element.classList.add(attr[i]);
+			}
+			else {
+				element.setAttribute(i, attr[i]);
+			}
+		}
+		return element;
+	}
+	else {
+		return null;
+	}
+};
+
+/**
+ * Extends {@link Element} to simplify append of element in DOM
+ * 
+ * @param	elt			element information : element type, text (optional) and attributes (optional)
+ * @return	The element
+ */
+Element.prototype.appendElement = function(elt) {
+	var element = createElement(elt);
+	if (null != element) {
+		this.appendChild(element);
+	}
+	return element;
+};
+
+/**
+ * Extends {@link Element} to simplify prepend of element in DOM
+ * 
+ * @param	elt			element information : element type, text (optional) and attributes (optional)
+ * @return	The element
+ */
+Element.prototype.prependElement = function(elt) {
+	var element = createElement(elt);
+	if (null != element) {
+		this.insertBefore(element, this.firstElementChild);
+	}
+	return element;
+};
+
+/**
  * Unselect all .selected rows
  *
  */
-var unSelectRows = function() {
-	var trsSelected = document.querySelectorAll(".tablify tr.selected");
+Tablify.prototype.unSelectRows = function() {
+	var trsSelected = this.table.querySelectorAll("tr.selected");
 	for(var i = 0; i < trsSelected.length; i++) {
 		trsSelected[i].classList.remove("selected");
 	}
 }
+
+/**
+ * Recalculate row ids
+ *
+ */
+Tablify.prototype.recalculateRowIds = function() {
+	var trs = this.table.querySelectorAll("tbody tr");
+	for (var i = 0; i < trs.length; i++) {
+		trs[i].id = "tr" + i;
+		trs[i].firstElementChild.innerHTML = i + 1;
+	}
+};
 
 /**
  * Defines behavior of element of tbody is selected
@@ -117,7 +173,7 @@ Tablify.prototype.thsClick = function(e) {
 Tablify.prototype.tdsRowIndexClick = function(e) {
 	// Unselect all selected rows if neither ctrl nor  cmd key are pressed
 	if(!e.ctrlKey && !e.metaKey) {
-		var trsSelected = document.querySelectorAll(".tablify tr.selected");
+		var trsSelected = this.table.querySelectorAll(".tr.selected");
 		for(var i = 0; i < trsSelected.length; i++) {
 			trsSelected[i].classList.remove("selected");
 		}
@@ -125,7 +181,7 @@ Tablify.prototype.tdsRowIndexClick = function(e) {
 	// Row selection
 	e.target.parentNode.classList.add("selected");
 	// Add buttons inactivation
-	var addButtons = document.querySelectorAll(".tablify button.add");
+	var addButtons = this.table.querySelectorAll("button.add");
 	for(var i = 0; i < addButtons.length; i++) {
 		addButtons[i].disabled = "disabled";
 	}
@@ -141,9 +197,9 @@ Tablify.prototype.tdsRowIndexClick = function(e) {
 Tablify.prototype.documentClick = function(e) {
 	// Unselect selected rows if the click is outside the table
 	if (!isIn(e.target, "tablify")) {
-		unSelectRows();
+		this.unSelectRows();
 		// Add buttons reactivation
-		var addButtons = document.querySelectorAll(".tablify button.add");
+		var addButtons = this.table.querySelectorAll("button.add");
 		for(var i = 0; i < addButtons.length; i++) {
 			addButtons[i].removeAttribute("disabled");
 		}
@@ -159,7 +215,7 @@ Tablify.prototype.documentClick = function(e) {
  */
 Tablify.prototype.tdsCellsMouseEnter = function(e) { 
 	e.target.parentNode.firstElementChild.classList.add("hovered");
-	document.querySelector(".tablify thead th:nth-child(" + (e.target.getIndex() + 1) + ")").classList.add("hovered");
+	this.table.querySelector("thead th:nth-child(" + (e.target.getIndex() + 1) + ")").classList.add("hovered");
 };
 
 /**
@@ -171,7 +227,7 @@ Tablify.prototype.tdsCellsMouseEnter = function(e) {
  */
 Tablify.prototype.tdsCellsMouseLeave = function(e) { 
 	e.target.parentNode.firstElementChild.classList.remove("hovered");
-	document.querySelector(".tablify thead th:nth-child(" + (e.target.getIndex() + 1) + ")").classList.remove("hovered");
+	this.table.querySelector("thead th:nth-child(" + (e.target.getIndex() + 1) + ")").classList.remove("hovered");
 };
 
 /**
@@ -185,7 +241,7 @@ Tablify.prototype.trsDragStart = function(e) {
 	e.dataTransfer.effectAllowed = 'move';
 	e.currentTarget.classList.add("moving");
 	e.dataTransfer.setData("text/html", null); // Cannot be empty for Firefox !
-	unSelectRows();
+	this.unSelectRows();
 };
 
 /**
@@ -199,19 +255,19 @@ Tablify.prototype.trsDragStart = function(e) {
 Tablify.prototype.trsDragOver = function(e) {
 	e.preventDefault();
 	var trOvered = e.target.parentNode;
-	if (e.pageY - e.target.offsetTop < e.target.offsetHeight / 2) {
-		document.querySelector(".tablify tbody").insertBefore(document.querySelector(".tablify tr.moving"), trOvered);
+	if (e.pageY - e.target.offsetTop - this.table.offsetTop < e.target.offsetHeight / 2) {
+		this.table.querySelector("tbody").insertBefore(this.table.querySelector("tr.moving"), trOvered);
 	}
 	else {
-		var tbody = document.querySelector(".tablify tbody");
+		var tbody = this.table.querySelector("tbody");
 		if (trOvered.isEqualNode(tbody.lastElementChild)) {
-			tbody.appendChild(document.querySelector(".tablify tr.moving"));
+			tbody.appendChild(this.table.querySelector("tr.moving"));
 		}
 		else {
-			tbody.insertBefore(document.querySelector(".tablify tr.moving"), trOvered.nextElementSibling);
+			tbody.insertBefore(this.table.querySelector("tr.moving"), trOvered.nextElementSibling);
 		}
 	}
-	recalculateRowIds();
+	this.recalculateRowIds();
 	return false;
 };
 
@@ -225,8 +281,8 @@ Tablify.prototype.trsDragOver = function(e) {
  */
 Tablify.prototype.trsDragEnd = function(e){
 	e.preventDefault();
-	document.querySelector(".tablify tr.moving").classList.remove("moving");
-	recalculateRowIds();
+	this.table.querySelector("tr.moving").classList.remove("moving");
+	this.recalculateRowIds();
 	return false;
 };
 
@@ -269,44 +325,110 @@ Tablify.prototype.tdsCellsDblClick = function(e){
  * @see 	EventTarget.addEventListener
  */
 Tablify.prototype.removeButtonsClick = function(e) {
-	var trsSelected = document.querySelectorAll(".tablify tr.selected");
+	var trsSelected = this.table.querySelectorAll("tr.selected");
 	for(var i = 0; i < trsSelected.length; i++) {
-		document.querySelector(".tablify tbody").removeChild(trsSelected[i]);
+		this.table.querySelector("tbody").removeChild(trsSelected[i]);
 	}
-	recalculateRowIds();
+	this.recalculateRowIds();
 	// Add buttons reactivation
-	var addButtons = document.querySelectorAll(".tablify button.add");
+	var addButtons = this.table.querySelectorAll("button.add");
 	for(var i = 0; i < addButtons.length; i++) {
 		addButtons[i].removeAttribute("disabled");
 	}
 };
 
+/**
+ * Initiate the table based on submitted columns and rows arrays
+ *
+ * @return	The created table element
+ */
+Tablify.prototype.initiateFromObject = function() {
+	// Table
+	var table = document.body.appendElement({elt:"table", attr:{className:"tablify"}});
+	// Header
+	var thead = table.appendElement({elt:"thead"});
+	// Colonnes
+	var tr = thead.appendElement({elt:"tr"});
+	tr.appendElement({elt:"th", attr:{id:"corner"}});
+	for (var i = 0; i < this.columns.length; i++) {
+		var th = tr.appendElement({elt:"th", text:this.columns[i]["label"]});
+		th.appendElement({elt:"a"});
+	}
+	// Body
+	var tbody = table.appendElement({elt:"tbody"}); 
+	for (var i = 0; i < this.rows.length; i++) {
+		var tr = tbody.appendElement({elt:"tr", attr:{id:"tr"+i, draggable:"true"}});
+		tr.appendElement({elt:"td", text:i+1});
+		var row = this.rows[i];
+		for (var j = 0; j < row.length; j++) {
+			tr.appendElement({elt:"td", text:row[j]});
+		}
+	}
+
+	return table;
+};
+
+/**
+ * Insert Actions Bar in the header
+ */
+Tablify.prototype.insertActionsBar = function() {
+	var thead = this.table.querySelector("thead");
+	var colspan = thead.querySelectorAll("th").length;
+	var tr = thead.prependElement({elt:"tr", attr:{className:"actions"}});
+	var td = tr.appendElement({elt:"td", attr:{colspan:colspan}});
+	td.appendElement({elt:"button", text:"Ajouter", attr:{type:"button", className:"add"}});
+	td.appendElement({elt:"button", text:"Supprimer", attr:{type:"button", className:"remove"}});
+};
+
+/**
+ * Initiate the events
+ */
+Tablify.prototype.initiateEvents = function() {
+	// Properties
+	this.tbody = this.table.querySelector("tbody");
+	this.trs = this.table.querySelectorAll("tbody tr");
+	this.ths = this.table.querySelectorAll("thead th:not(#corner)");
+	this.tdsRowIndex = this.table.querySelectorAll("tbody td:first-child");
+	this.tdsCells = this.table.querySelectorAll("tbody td:not(:first-child)");
+	this.removeButtons = this.table.querySelectorAll("button.remove");
+	
+	// Initiate events
+	document.addEventListener("click", this.documentClick.bind(this), false);
+	this.tbody.addEventListener("click", this.tbodyClick.bind(this), false);
+	this.ths.addEventListenerAll("click", this.thsClick.bind(this), false);
+	this.tdsRowIndex.addEventListenerAll("click", this.tdsRowIndexClick.bind(this), false);
+	this.tdsCells.addEventListenerAll("dblclick", this.tdsCellsDblClick.bind(this), false);
+	this.tbody.addEventListener("drop", this.tbodyDrop.bind(this), false);
+	this.trs.addEventListenerAll("dragstart", this.trsDragStart.bind(this), false);
+	this.trs.addEventListenerAll("dragover", this.trsDragOver.bind(this), false);
+	this.trs.addEventListenerAll("dragend", this.trsDragEnd.bind(this), false);
+	this.tdsCells.addEventListenerAll("mouseenter", this.tdsCellsMouseEnter.bind(this), false);
+	this.tdsCells.addEventListenerAll("mouseleave", this.tdsCellsMouseLeave.bind(this), false);
+	this.removeButtons.addEventListenerAll("click", this.removeButtonsClick.bind(this), false);
+};
+
+/**
+ * Initiate the events
+ */
+Tablify.prototype.transformTable = function(selector) {
+	this.table = document.querySelector(selector);
+	this.insertActionsBar();
+	this.initiateEvents();
+};
+
+
+/**
+ * Initiate the events
+ */
+Tablify.prototype.generateFromObject = function(obj) {
+	this.columns = obj.columns;
+	this.rows = obj.rows;
+	this.table = this.initiateFromObject();
+	this.insertActionsBar();
+	this.initiateEvents();
+};
+
 /** 
  * Class constructor.
  */
-function Tablify() {
-	
-	// Propriétés
-	this.tbody = document.querySelector(".tablify tbody");
-	this.trs = document.querySelectorAll(".tablify tbody tr");
-	this.ths = document.querySelectorAll(".tablify thead th:not(#corner)");
-	this.tdsRowIndex = document.querySelectorAll(".tablify tbody td:first-child");
-	this.tdsCells = document.querySelectorAll(".tablify tbody td:not(:first-child)");
-	this.removeButtons = document.querySelectorAll(".tablify button.remove");
-	
-	// Initiate events
-	document.addEventListener("click", this.documentClick, false);
-	this.tbody.addEventListener("click", this.tbodyClick, false);
-	this.ths.addEventListenerAll("click", this.thsClick, false);
-	this.tdsRowIndex.addEventListenerAll("click", this.tdsRowIndexClick, false);
-	this.tdsCells.addEventListenerAll("dblclick", this.tdsCellsDblClick, false);
-	this.tbody.addEventListener("drop", this.tbodyDrop, false);
-	this.trs.addEventListenerAll("dragstart", this.trsDragStart, false);
-	this.trs.addEventListenerAll("dragover", this.trsDragOver, false);
-	this.trs.addEventListenerAll("dragend", this.trsDragEnd, false);
-	this.tdsCells.addEventListenerAll("mouseenter", this.tdsCellsMouseEnter, false);
-	this.tdsCells.addEventListenerAll("mouseleave", this.tdsCellsMouseLeave, false);
-	this.removeButtons.addEventListenerAll("click", this.removeButtonsClick, false);
-
-}
-var test = new Tablify();
+function Tablify() {};

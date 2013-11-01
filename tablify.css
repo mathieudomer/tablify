@@ -1,5 +1,10 @@
 .tablify {
 	border-collapse: collapse;
+    -moz-user-select: -moz-none;
+    -webkit-user-select: none;
+    -khtml-user-select: none;
+    -o-user-select: none;
+    user-select: none;
 }
 .tablify td, .tablify th {
 	border: 1px solid #ababab;
