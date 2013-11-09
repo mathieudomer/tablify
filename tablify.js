@@ -14,6 +14,7 @@
  * - Editer à la cellule
  * - Historique
  * - Enregistrer
+ * - Autosave
  * - Charger
  * - Générer le HTML
  * - Websockets ? (modification côté serveur)
@@ -21,7 +22,7 @@
 
 
 /**
- * Extends {@link NodeList} to simplify addEventListener on list
+ * Extends {@link NodeList} to simplify addEventListener on node list
  *
  * @param	type		Event type
  * @param	listener 	Object triggered when the event occurs
@@ -31,6 +32,21 @@
 NodeList.prototype.addEventListenerAll = function(type, listener, useCapture) {
 	for(var i = 0; i < this.length; i++) {
 		this[i].addEventListener(type, listener, useCapture);
+	}
+};
+
+/**
+ * Extends {@link NodeList} to simplify remove class on node list
+ *
+ * @param	arguments	list of classes
+ * @see 	EventTarget.addEventListener
+ */
+NodeList.prototype.removeClasses = function() {
+	var classesCount = arguments.length;
+	for (var i = 0; i < this.length; i++) {
+		for (var j = 0; j < classesCount; j++) {
+			this[i].classList.remove(arguments[j]);
+		}
 	}
 };
 
@@ -61,7 +77,7 @@ Element.prototype.getIndex = function() {
 }
 
 /**
- * Simplify creation of element in DOM
+ * Simplifies creation of element in DOM
  * 
  * @param	elt			element information : element type, text (optional) and attributes (optional)
  * @return	The element
@@ -115,6 +131,59 @@ Element.prototype.prependElement = function(elt) {
 };
 
 /**
+ * Extends {@link Element} to remove the classes passed in arguments of the siblings of the element
+ * 
+ * @param	arguments	the list of classes to remove
+ */
+Element.prototype.removeSiblingsClasses = function() {
+	var countItems = arguments.length;
+	var currentElement = this.parentNode.firstElementChild;
+	do {
+		if(currentElement != this) {
+			for(var i = 0; i < countItems; i++) {
+				if (currentElement.classList.contains(arguments[i])) {
+					currentElement.classList.remove(arguments[i]);
+				}
+			}
+		}
+	}
+	while (currentElement = currentElement.nextElementSibling)
+};
+
+/**
+ * Extends {@link Element} to switch class of an element by an ordered list
+ * 
+ * @param	arguments	the list of classes in the order to process
+ */
+Element.prototype.toggleClassesList = function() {
+	var countItems = arguments.length;
+	var emptyItem = countItems;
+	var foundItem = countItems;
+	var switchItem = 0;
+	for(var i = 0; i < countItems; i++) {
+		if ("" == arguments[i]) {
+			emptyItem = i;
+		}
+		else if (this.classList.contains(arguments[i])) {
+			foundItem = i;
+		}
+	}
+	if (foundItem == countItems) {
+		foundItem = emptyItem;
+	}
+	else {
+		this.classList.remove(arguments[foundItem]);
+	}
+	if (foundItem != countItems - 1) {
+		switchItem = foundItem + 1;
+	}
+	if ("" != arguments[switchItem]) {
+		this.classList.add(arguments[switchItem]);
+	}
+	return arguments[switchItem];
+};
+
+/**
  * Unselect all .selected rows
  *
  */
@@ -138,6 +207,17 @@ Tablify.prototype.recalculateRowIds = function() {
 };
 
 /**
+ * Recalculate row numbers
+ *
+ */
+Tablify.prototype.recalculateRowNumbers = function() {
+	var trs = this.table.querySelectorAll("tbody tr");
+	for (var i = 0; i < trs.length; i++) {
+		trs[i].firstElementChild.innerHTML = i + 1;
+	}
+};
+
+/**
  * Defines behavior of element of tbody is selected
  *
  * @param	e 	{@link Event} object
@@ -148,18 +228,72 @@ Tablify.prototype.tbodyClick = function(e) {
 };
 
 /**
+ * Compare two elements ascending by their innerHTML (strings or intergers)
+ *
+ * @param	a, b 	elements to compare
+ * @return	True - a is greater than b
+ * @return	False - b is greater than a
+ */
+var sortAscendingByInnerHMTLString = function(a, b) {
+	return a.innerHTML.toLowerCase().localeCompare(b.innerHTML.toLowerCase());
+};
+
+/**
+ * Compare two elements ascending by their innerHTML (dates)
+ *
+ * @param	a, b 	elements to compare
+ * @return	True - a is greater than b
+ * @return	False - b is greater than a
+ */
+var sortAscendingByInnerHMTLDate = function(a, b) {
+	return Date.parse(a.innerHTML) > Date.parse(b.innerHTML);
+};
+
+/**
+ * Compare two elements ascending by the id of their parents
+ *
+ * @param	a, b 	elements to compare
+ * @return	True - a is greater than b
+ * @return	False - b is greater than a
+ */
+var sortAscendingByParentsId = function(a, b) {
+	return parseInt(a.parentNode.id.substr(2), "10") - parseInt(b.parentNode.id.substr(2), "10");
+};
+
+/**
  * Defines behavior of th element when clicked
  * Sort rows by the selected column : 
  * - first click : ascending
  * - second click : descending
  * - third click : original sort
- * > Don't change row ids !
  *
  * @param	e 	{@link Event} object
  * @see 	EventTarget.addEventListener
  */
 Tablify.prototype.thsClick = function(e) {
-	e.target.classList.add("ascending");
+	e.currentTarget.removeSiblingsClasses("ascending", "descending");
+	var direction = e.currentTarget.toggleClassesList("ascending", "descending", "");
+	if ("" != direction) {
+		var index = e.currentTarget.getIndex();
+		var sortFunction = sortAscendingByInnerHMTLString;
+		// If the table has been generated by object, manage of date columns
+		if ("date" == this.columns[index - 1].type) {
+			//sortFunction = sortAscendingByInnerHMTLDate;
+		}
+	}
+	else {
+		var index = 0;
+		var sortFunction = sortAscendingByParentsId;
+	}
+	var cells = this.tbody.querySelectorAll("tr td:nth-child(" + (index + 1) + ")");
+	var arrayCells = [].slice.call(cells).sort(sortFunction);
+	if ("descending" == direction) {
+		arrayCells.reverse();
+	}
+	for (var i = 0; i < arrayCells.length; i++) {
+		this.tbody.appendChild(arrayCells[i].parentNode);
+	}
+	this.recalculateRowNumbers();
 };
 
 /**
@@ -173,7 +307,7 @@ Tablify.prototype.thsClick = function(e) {
 Tablify.prototype.tdsRowIndexClick = function(e) {
 	// Unselect all selected rows if neither ctrl nor  cmd key are pressed
 	if(!e.ctrlKey && !e.metaKey) {
-		var trsSelected = this.table.querySelectorAll(".tr.selected");
+		var trsSelected = this.table.querySelectorAll("tr.selected");
 		for(var i = 0; i < trsSelected.length; i++) {
 			trsSelected[i].classList.remove("selected");
 		}
@@ -268,6 +402,7 @@ Tablify.prototype.trsDragOver = function(e) {
 		}
 	}
 	this.recalculateRowIds();
+	this.recalculateRowNumbers();
 	return false;
 };
 
@@ -282,7 +417,9 @@ Tablify.prototype.trsDragOver = function(e) {
 Tablify.prototype.trsDragEnd = function(e){
 	e.preventDefault();
 	this.table.querySelector("tr.moving").classList.remove("moving");
+	this.ths.removeClasses("ascending", "descending");
 	this.recalculateRowIds();
+	this.recalculateRowNumbers();
 	return false;
 };
 
@@ -338,6 +475,18 @@ Tablify.prototype.removeButtonsClick = function(e) {
 };
 
 /**
+ * Defines behavior of the Add button when clicked
+ * A new line is added under the line selected or at the beginning of the table
+ * If the table has been iniate with an object the form respect columns type
+ *
+ * @param	e 	{@link Event} object
+ * @see 	EventTarget.addEventListener
+ */
+Tablify.prototype.addButtonsClick = function(e) {
+
+};
+
+/**
  * Initiate the table based on submitted columns and rows arrays
  *
  * @return	The created table element
@@ -390,6 +539,7 @@ Tablify.prototype.initiateEvents = function() {
 	this.ths = this.table.querySelectorAll("thead th:not(#corner)");
 	this.tdsRowIndex = this.table.querySelectorAll("tbody td:first-child");
 	this.tdsCells = this.table.querySelectorAll("tbody td:not(:first-child)");
+	this.addButtons = this.table.querySelectorAll("button.add");
 	this.removeButtons = this.table.querySelectorAll("button.remove");
 	
 	// Initiate events
@@ -404,11 +554,12 @@ Tablify.prototype.initiateEvents = function() {
 	this.trs.addEventListenerAll("dragend", this.trsDragEnd.bind(this), false);
 	this.tdsCells.addEventListenerAll("mouseenter", this.tdsCellsMouseEnter.bind(this), false);
 	this.tdsCells.addEventListenerAll("mouseleave", this.tdsCellsMouseLeave.bind(this), false);
+	this.addButtons.addEventListenerAll("click", this.addButtonsClick.bind(this), false);
 	this.removeButtons.addEventListenerAll("click", this.removeButtonsClick.bind(this), false);
 };
 
 /**
- * Initiate the events
+ * Initiate table from a selector
  */
 Tablify.prototype.transformTable = function(selector) {
 	this.table = document.querySelector(selector);
@@ -416,9 +567,8 @@ Tablify.prototype.transformTable = function(selector) {
 	this.initiateEvents();
 };
 
-
 /**
- * Initiate the events
+ * Initiate table from an object
  */
 Tablify.prototype.generateFromObject = function(obj) {
 	this.columns = obj.columns;

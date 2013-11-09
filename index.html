@@ -8,6 +8,40 @@
 </head>
 <body>
 <h1>Tablify</h1>
+<h2>Generate from object</h2>
+<script>
+var fromObject = new Tablify();
+fromObject.generateFromObject({
+	columns : [
+		{
+			label : "Nom",
+			type : "string",
+			size : "15"
+		},
+		{
+			label : "Téléphone",
+			type : "string",
+			size : "10"
+		},
+		{
+			label : "Date de naissance",
+			type : "date"
+		},
+		{
+			label : "Age",
+			type : "string",
+			size : "2"
+		}
+	],
+	rows : [
+		["DOMER", "0689043616", "07/09/1984", "29 ans"],
+		["POUTEAU", "0618311694", "23/04/1984", "29 ans"],
+		["DOMER", "0610012767", "19/12/1956", "57 ans"],
+		["VALETTE", "0611845811", "04/11/1958", "55 ans"],
+		["MENARD", "0243043183", "11/06/1939", "74 ans"]
+	]
+});
+</script>
 <h2>Tablified by css class</h2>
 <table id="fromClass" class="tablify">
 	<thead>
@@ -60,40 +94,6 @@
 <script>
 var fromClass = new Tablify();
 fromClass.transformTable("#fromClass");
-</script>
-<h2>Generate from object</h2>
-<script>
-var fromObject = new Tablify();
-fromObject.generateFromObject({
-	columns : [
-		{
-			label : "Nom",
-			type : "text",
-			size : "15"
-		},
-		{
-			label : "Téléphone",
-			type : "text",
-			size : "10"
-		},
-		{
-			label : "Date de naissance",
-			type : "date"
-		},
-		{
-			label : "Age",
-			type : "text",
-			size : "2"
-		}
-	],
-	rows : [
-		["DOMER", "0689043616", "07/09/1984", "29 ans"],
-		["POUTEAU", "0618311694", "23/04/1984", "29 ans"],
-		["DOMER", "0610012767", "19/12/1956", "57 ans"],
-		["VALETTE", "0611845811", "04/11/1958", "55 ans"],
-		["MENARD", "0689043616", "11/06/1939", "74 ans"]
-	]
-});
 </script>
 </body>
 </html>
